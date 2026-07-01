@@ -1,56 +1,110 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, Terminal } from 'lucide-react';
+import { ArrowRight, Terminal, HelpCircle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 const FALLBACK_PROJECTS = [
   {
     id: 'portfolio-k3s',
-    title: 'Cloud-Native GitOps Portfolio Cluster',
-    subtitle: 'Kubernetes (k3s) 기반 무중단 배포 포트폴리오 웹 인프라',
-    summary: '본 포트폴리오 웹사이트를 위한 클라우드 네이티브 인프라스트럭처로, React 프론트엔드와 Express 백엔드를 컨테이너화하고 k3s(클래식 K8s 경량화) 클러스터에서 구동합니다. ArgoCD를 이용한 GitOps 지속적 배포(CD) 파이프라인을 구축하여 코드 변경 사항을 자동으로 감지하고 무중단 배포를 실현했습니다.',
-    tags: ['k3s', 'ArgoCD', 'React', 'Tailwind CSS', 'Express', 'Docker', 'Nginx']
+    title: 'ZeroTrust 기반 내부 접근 제어 플랫폼 구축',
+    subtitle: 'Multi-Node k3s 클러스터 및 GitOps 기반 통합 인프라와 Teleport 보안 게이트웨이 구축',
+    tags: ['Teleport', 'Kubernetes', 'ArgoCD', 'Terraform', 'Prometheus'],
+    problem: '기존의 과도한 상시 권한, 권한 회수 지연, 비정상 접근 감사 부재로 인해 내부자에 의한 중요 리소스 유출이나 관리 리스크가 상존함.',
+    solution: '임시 권한 승인/자동 회수 플랫폼을 구축하고, 서버와 쿠버네티스 접근 경로를 Teleport로 단일화했습니다. 감사 로그와 명령어 입력 단위의 세션 레코딩을 AWS 인프라(DynamoDB, S3)에 적재하여 강력한 사후 추적 능력을 검증했습니다.'
   },
   {
     id: 'ecommerce-microservices',
-    title: 'MSA E-Commerce Backend Platform',
-    subtitle: '도메인 주도 설계(DDD) 기반 대용량 트래픽 대응 마이크로서비스 아키텍처',
-    summary: 'Spring Boot와 Node.js로 구축된 전자상거래 백엔드 플랫폼입니다. 인증, 상품 카탈로그, 주문 처리, 결제 시스템을 독립적인 마이크로서비스로 분할하고 Kubernetes 클러스터 상에서 서비스 메시(Istio) 및 API Gateway를 통해 통신하도록 설계했습니다. Kafka를 통한 이벤트 기반 비동기 트랜잭션을 구현하여 서비스 간 결합도를 낮췄습니다.',
-    tags: ['MSA', 'Kubernetes', 'Apache Kafka', 'Spring Boot', 'Node.js', 'PostgreSQL', 'Redis']
+    title: '온프레미스 멀티 서버에서 쿠버네티스 전환',
+    subtitle: '온-프레미스 기반 3 Tier 인프라의 선언적 전환 경험',
+    tags: ['Rocky Linux', 'Kubernetes', 'Docker', 'Vagrant'],
+    problem: 'Vagrant VM 기반 8대의 온프레미스 멀티 서버를 수동으로 운영하면서 설정 파편화와 휴먼 에러가 빈번히 발생했고, 리소스 분리를 위해 물리 대역을 직접 격리해 구조적 비용과 관리 복잡성이 컸습니다.',
+    solution: '8대의 서버와 5개 대역을 네임스페이스와 NetworkPolicy 기반 논리 제어로 추상화했습니다. Ingress, Deployment, StatefulSet, PVC 등을 사용해 전체 구성을 코드로 자동화하고 컨트롤러 패턴 기반의 자가 치유 가용성을 구축했습니다.'
   },
   {
     id: 'collab-whiteboard',
-    title: 'Real-time Collaborative Canvas Tool',
-    subtitle: 'WebSocket 기반 실시간 벡터 드로잉 협업 플랫폼',
-    summary: '여러 사용자가 동시에 접속하여 벡터 도형을 그리고 텍스트를 입력하며 실시간으로 의견을 공유할 수 있는 화이트보드 협업 툴입니다. WebSocket 프로토콜과 Node.js(Socket.io)를 활용하여 100ms 미만의 지연 시간(Latency)으로 상태를 동기화하며, Redis Adapter를 활용한 Pub/Sub 아키텍처로 소켓 서버를 수평 확장(Scale-out)할 수 있도록 설계했습니다.',
-    tags: ['WebSockets', 'Socket.io', 'React', 'Node.js', 'Redis', 'MongoDB', 'Docker']
+    title: 'AI Agent 기반 구인 · 구직 자동화 플랫폼 구축',
+    subtitle: 'FastAPI & Docker 기반 시니어 일자리 자동 매칭 플랫폼',
+    tags: ['FastAPI', 'PostgreSQL', 'Docker', 'Clova OCR/STT', 'LLM', 'React'],
+    problem: '시니어 구직자의 온라인 플랫폼 사용 장벽과 지인/공공기관 편중 의존도(60% 이상)가 높고, 구인자가 모바일 기기로 구인 공고문을 일일이 타이핑하여 등록해야 하는 실무적 피로감이 상당했습니다.',
+    solution: '이미지 촬영(OCR) 및 음성 녹음(STT)만으로 공고문 초안이 자동 생성되는 AI 파이프라인을 구축하고, 로그인 즉시 주변 소일거리를 노출하는 네이버 지도(Naver Maps) 연동 기반 시니어 특화 JIT 플랫폼을 구축했습니다.'
   }
 ];
 
 export default function Projects({ onSelectProject }) {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+
+  // Helper to resolve tag into simpleicons slug
+  const getSlugByTag = (tag) => {
+    const map = {
+      'k3s': 'k3s',
+      'ArgoCD': 'argocd',
+      'React': 'react',
+      'Express': 'express',
+      'Docker': 'docker',
+      'Traefik': 'traefik',
+      'Kubernetes': 'kubernetes',
+      'Apache Kafka': 'apachekafka',
+      'Spring Boot': 'springboot',
+      'PostgreSQL': 'postgresql',
+      'FastAPI': 'fastapi',
+      'Clova OCR/STT': 'naver',
+      'LLM': 'openai',
+      'Redis': 'redis',
+      'Socket.io': 'socketdotio',
+      'Node.js': 'nodedotjs',
+      'Go': 'go',
+      'InfluxDB': 'influxdb',
+      'Rust': 'rust',
+      'Prometheus': 'prometheus',
+      'gRPC': 'grpc',
+      'Python': 'python',
+      'AWS S3': 'amazons3',
+      'SQLite': 'sqlite',
+      'WebSockets': 'socketdotio',
+      'Rocky Linux': 'rockylinux'
+    };
+    return map[tag] || tag.toLowerCase().replace(/[^a-z0-9]/g, '');
+  };
+
+  // Helper to dynamically get logo URL, using custom local images for ArgoCD, EC2, and Traefik
+  const getLogoUrl = (slug) => {
+    if (slug === 'argocd') return '/assets/argocd.png';
+    if (slug === 'amazonec2') return '/assets/ec2.png';
+    if (slug === 'traefik') return '/assets/traefik.png';
+    if (slug === 'teleport') return '/assets/teleport.png';
+    if (slug === 'rockylinux') return '/assets/rockylinux.png';
+    return `https://cdn.simpleicons.org/${slug}`;
+  };
 
   useEffect(() => {
     fetch('/api/projects')
       .then((res) => {
-        if (!res.ok) throw new Error('API server returned error');
+        if (!res.ok) throw new Error('API server error');
         return res.json();
       })
       .then((data) => {
-        setProjects(data);
+        const merged = [...FALLBACK_PROJECTS];
+        data.forEach(item => {
+          const idx = merged.findIndex(fp => fp.id === item.id);
+          if (idx !== -1) {
+            merged[idx] = { ...merged[idx], ...item };
+          } else {
+            merged.push(item);
+          }
+        });
+        setProjects(merged);
         setLoading(false);
       })
       .catch((err) => {
-        console.warn('API fetch failed, loading fallback local data:', err);
+        console.warn('API fetch failed, loading enriched fallback local data:', err);
         setProjects(FALLBACK_PROJECTS);
         setLoading(false);
-        setError(true);
       });
   }, []);
 
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto px-6 py-24 text-center">
+      <div className="max-w-5xl mx-auto px-6 py-24 text-center">
         <div className="animate-pulse flex flex-col items-center justify-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-border-soft flex items-center justify-center">
             <Terminal className="text-muted-gray" />
@@ -61,62 +115,124 @@ export default function Projects({ onSelectProject }) {
     );
   }
 
+  // Display all main projects
+  const displayedProjects = projects;
+
   return (
-    <div className="max-w-6xl mx-auto px-6 py-16 md:py-24">
+    <div className="max-w-5xl mx-auto px-6 pt-8 pb-16 md:pt-12 md:pb-24">
       {/* Section Header */}
-      <div className="mb-16 md:mb-24">
-        <h1 className="font-serif text-4xl md:text-5xl font-bold tracking-tight mb-6 text-dark-graphite">
-          Selected Projects
+      <div className="mb-16 md:mb-20">
+        <h1 className="font-serif text-3xl md:text-5xl font-bold tracking-tight mb-4 text-dark-graphite">
+          Projects
         </h1>
-        <p className="text-base md:text-lg font-light text-muted-gray max-w-2xl">
-          직접 설계하고 운영해 본 분산 인프라, 실시간 양방향 서비스, 대용량 아키텍처 관련 프로젝트 목록입니다. 
-          각 프로젝트별 상세 마크다운 설명과 아키텍처를 확인하실 수 있습니다.
+        <p className="text-sm md:text-base font-light text-muted-gray max-w-2xl">
+          실제 마주한 한계를 명확하게 정의하고, 이를 극복하기 위해 설계한 분산 인프라 및 백엔드 프로젝트 목록입니다.
+          각 카드를 클릭하여 아키텍처 다이어그램 및 상세 설명 문서를 읽어보실 수 있습니다.
         </p>
       </div>
 
-      {/* Grid List */}
-      <div className="grid grid-cols-1 gap-12 md:gap-16">
-        {projects.map((project) => (
-          <div 
-            key={project.id}
-            onClick={() => onSelectProject(project.id)}
-            className="group flex flex-col md:flex-row md:items-start justify-between bg-warm-white p-8 md:p-12 rounded-xl border border-border-soft hover:border-accent-terracotta/40 hover:shadow-sm transition-all duration-300 cursor-pointer"
-          >
-            <div className="flex-1 md:pr-12">
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 mb-6">
-                {project.tags.map((tag) => (
-                  <span 
-                    key={tag} 
-                    className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-1 rounded bg-border-soft/60 text-muted-gray"
-                  >
-                    {tag}
-                  </span>
-                ))}
+      {/* 2:2 Grid Layout for Projects (Responsive md:grid-cols-2) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-10 mb-12">
+        {displayedProjects.map((project, index) => {
+          // Format numbering index (e.g. 01, 02)
+          const numberStr = String(index + 1).padStart(2, '0');
+          // Limit tags to at most 5
+          const limitedTags = project.tags.slice(0, 5);
+
+          return (
+            <div 
+              key={project.id}
+              onClick={() => onSelectProject(project.id)}
+              className="group relative flex flex-col justify-between bg-pure-white p-8 rounded-none border border-border-soft hover:border-accent-green/50 hover:shadow-sm transition-all duration-300 cursor-pointer overflow-hidden"
+            >
+              {/* Floating Large Index Watermark (Top Right) */}
+              <div className="absolute top-4 right-6 font-serif text-5xl font-extrabold text-accent-green/10 select-none group-hover:text-accent-green/20 transition-colors duration-300">
+                {numberStr}
               </div>
 
-              {/* Title & Subtitle */}
-              <h2 className="font-serif text-2xl md:text-3xl font-bold tracking-tight mb-4 group-hover:text-accent-terracotta transition-colors duration-300 text-dark-graphite">
-                {project.title}
-              </h2>
-              <h3 className="text-xs uppercase tracking-widest text-muted-gray mb-6">
-                {project.subtitle}
-              </h3>
+              <div className="space-y-6">
+                {/* Header: Title & Subtitle */}
+                <div className="space-y-2 pr-12">
+                  <h2 className="font-serif text-lg md:text-xl font-bold tracking-tight group-hover:text-accent-green transition-colors duration-300 text-dark-graphite leading-tight">
+                    {project.title}
+                  </h2>
+                  <p className="text-[11px] text-muted-gray uppercase tracking-wider">{project.subtitle}</p>
+                </div>
 
-              {/* Short Summary */}
-              <p className="text-sm md:text-base font-light text-muted-gray leading-relaxed mb-8 md:mb-0 max-w-3xl">
-                {project.summary}
-              </p>
-            </div>
+                {/* Tech Stack Logos (Limit to 5) */}
+                <div className="flex items-center space-x-2">
+                  {limitedTags.map((tag) => {
+                    const slug = getSlugByTag(tag);
+                    return (
+                      <div 
+                        key={tag}
+                        className="relative group/logo w-7 h-7 flex items-center justify-center bg-border-soft/20 border border-border-soft/40 p-1.5 rounded-none hover:border-accent-green/50 transition-colors duration-200"
+                      >
+                        <img 
+                          src={getLogoUrl(slug)} 
+                          alt={tag}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            e.target.src = 'https://placehold.co/40x40?text=S';
+                          }}
+                        />
+                        {/* Custom Tooltip */}
+                        <div className="absolute opacity-0 group-hover/logo:opacity-100 transition-opacity duration-200 pointer-events-none bg-dark-graphite text-pure-white text-[9px] px-2 py-0.5 rounded-none shadow-md whitespace-nowrap -top-8 left-1/2 transform -translate-x-1/2 z-10 border border-border-soft/20 font-sans tracking-wide">
+                          {tag}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-            {/* Read More Arrow */}
-            <div className="flex items-center space-x-2 text-sm font-semibold tracking-wide text-muted-gray group-hover:text-accent-terracotta transition-colors duration-300 self-end md:self-center mt-4 md:mt-0 whitespace-nowrap">
-              <span>자세히 보기</span>
-              <ArrowRight size={16} className="transform group-hover:translate-x-1.5 transition-transform duration-300" />
+                {/* Vertical Stack: Problem & Infrastructure Goal */}
+                <div className="space-y-4 pt-4 border-t border-border-soft/50">
+                  {/* Problem */}
+                  <div className="space-y-1 text-left">
+                    <div className="flex items-center space-x-1.5 text-xs font-bold text-red-600/80">
+                      <HelpCircle size={13} />
+                      <span>문제 정의</span>
+                    </div>
+                    <p className="text-xs font-light text-muted-gray leading-relaxed break-keep">
+                      {project.problem || '정의된 문제 내역이 없습니다.'}
+                    </p>
+                  </div>
+
+                  {/* Solution / Infrastructure Goal */}
+                  <div className="space-y-1 text-left">
+                    <div className="flex items-center space-x-1.5 text-xs font-bold text-accent-green">
+                      <CheckCircle size={13} />
+                      <span>인프라 설계의 목적</span>
+                    </div>
+                    <p className="text-xs font-light text-muted-gray leading-relaxed break-keep">
+                      {project.solution || '수립된 해결 방안이 없습니다.'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Read More Footer */}
+              <div className="flex items-center justify-end space-x-1 text-xs font-semibold text-muted-gray group-hover:text-accent-green transition-colors duration-300 pt-4 border-t border-border-soft/30 mt-6">
+                <span>상세 내용 보기</span>
+                <ArrowRight size={13} className="transform group-hover:translate-x-1 transition-transform duration-300" />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      {/* Show More/Less Toggle Button */}
+      {projects.length > 4 && (
+        <div className="flex justify-center pt-4">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="inline-flex items-center space-x-2 px-6 py-3 border border-border-soft hover:border-accent-green/60 rounded-full text-xs font-semibold text-muted-gray hover:text-accent-green transition-all duration-300 select-none cursor-pointer"
+          >
+            <span>{showAll ? '프로젝트 접기' : '기타 프로젝트 더보기'}</span>
+            {showAll ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
